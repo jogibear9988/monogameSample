@@ -1,26 +1,28 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
+using MonoGame.Extended;
 using Sample.Audio;
+using Sample.Objects;
 
 namespace Sample
 {
     public class SampleGame : Game
     {
+        private Size GameBounds = new Size(1280, 720); //window resolution
+
         #region Core Game Stuff
-        
+
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        private Point GameBounds = new Point(1280, 720); //window resolution
         public Texture2D Texture;
         private AudioSource SoundFX;
 
         public SampleGame()
         {
             _graphics = new GraphicsDeviceManager(this);
-            _graphics.PreferredBackBufferWidth = GameBounds.X;
-            _graphics.PreferredBackBufferHeight = GameBounds.Y;
+            _graphics.PreferredBackBufferWidth = GameBounds.Width;
+            _graphics.PreferredBackBufferHeight = GameBounds.Height;
             IsMouseVisible = true;
         }
 
@@ -47,38 +49,23 @@ namespace Sample
 
         #endregion
 
-        #region Base Drawing functions
-        
-        private void DrawRectangle(SpriteBatch sb, Rectangle Rec, Color color)
-        {
-            Vector2 pos = new Vector2(Rec.X, Rec.Y);
-            sb.Draw(Texture, pos, Rec, color * 1.0f, 0, Vector2.Zero, 1.0f, SpriteEffects.None, 0.00001f);
-        }
-        #endregion
-
-        int playerX;
-        int playerY;
-        int playerWidth = 60;
-        int playerHeight = 20;
+        Player player;
 
         private void Init()
         {
-            playerX = GameBounds.X / 2 - playerWidth/2;
-            playerY = GameBounds.Y / 2 - playerHeight/2;
+            player = new Player();
+            player.Init(GameBounds);
         }
 
         protected override void Update(GameTime gameTime)
         {
             var keyboardState = Keyboard.GetState();
+            var mouseState = Mouse.GetState();
+
             if (keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
-            if (keyboardState.IsKeyDown(Keys.Up))
-            {
-                playerY = playerY - 1;
-            }
-
-
+            player.Update(gameTime, keyboardState, mouseState);
 
             base.Update(gameTime);
         }
@@ -88,10 +75,8 @@ namespace Sample
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-            DrawRectangle(_spriteBatch, new Rectangle(playerX, playerY, playerWidth, playerHeight), Color.Red);
+            player.Draw(gameTime, _spriteBatch);
 
-
-            
             _spriteBatch.End();
             base.Draw(gameTime);
         }
