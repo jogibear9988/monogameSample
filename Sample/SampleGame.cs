@@ -73,10 +73,14 @@ namespace Sample
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+            //Warum eine Spritebatch?
+            //Die Grafikkarte muss alle Zeichenfunktionen auf einma abarbeiten um efizient zu sein, daher braucht sie die ganzean anweisungen
+            //in einer Liste (Batch), sonst würde es flackern
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
             player.Draw(gameTime, _spriteBatch);
 
+            //Das Bewirkt das die Batch abgearbeitet wird
             _spriteBatch.End();
             base.Draw(gameTime);
         }
