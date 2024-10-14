@@ -18,6 +18,16 @@ namespace Sample
         public Texture2D Texture;
         private AudioSource SoundFX;
 
+        int sizeX = 10;
+        int sizeY = 10;
+
+        int offsetX = 0;
+        int offsetY = 0;
+
+        int blockSize = 30;
+
+        int[,] playField;
+
         public SampleGame()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -53,8 +63,12 @@ namespace Sample
 
         private void Init()
         {
-            player = new Player();
-            player.Init(GameBounds);
+            playField = new int[sizeX, sizeY];
+            playField[0, 0] = 1;
+            playField[4, 6] = 1;
+            playField[4, 7] = 1;
+            offsetX = (GameBounds.Width - sizeX * blockSize) / 2;
+            offsetY = (GameBounds.Height - sizeY * blockSize) / 2;
         }
 
         protected override void Update(GameTime gameTime)
@@ -65,7 +79,13 @@ namespace Sample
             if (keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
-            player.Update(gameTime, keyboardState, mouseState);
+            if (mouseState.LeftButton == ButtonState.Pressed)
+            {
+                var x = (mouseState.X - offsetX) / blockSize;
+                var y = (mouseState.Y - offsetY) / blockSize;
+                if (x >= 0 && y >= 0 && x < sizeX && y < sizeY)
+                    playField[x, y] = 1;
+            }
 
             base.Update(gameTime);
         }
@@ -78,7 +98,18 @@ namespace Sample
             //in einer Liste (Batch), sonst würde es flackern
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-            player.Draw(gameTime, _spriteBatch);
+            for (int i = 0; i < sizeX; i++)
+            {
+                for (int j = 0; j < sizeY; j++)
+                {
+                    _spriteBatch.DrawRectangle(new Rectangle(i * blockSize + offsetX, j * blockSize + offsetY, blockSize, blockSize), Color.Black, 2);
+                    if (playField[i, j] == 1)
+                    {
+                        _spriteBatch.DrawCircle(new CircleF(new Vector2(i * blockSize + offsetX + blockSize/2, j * blockSize + offsetY+blockSize/2), blockSize / 2 - 2), 30, Color.Wheat, 20);
+                    }
+                }
+            }
+
 
             //Das Bewirkt das die Batch abgearbeitet wird
             _spriteBatch.End();

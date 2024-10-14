@@ -1,0 +1,11 @@
+﻿TODOs
+
+Basisklasse oder Interface für alle Game Objekte einführen. So kann man diese in eine Liste Packen, bsp. zur collision detection
+
+Bspw:
+
+BaseGameObj {
+	Update
+	Draw
+	CollidesWith
+}
