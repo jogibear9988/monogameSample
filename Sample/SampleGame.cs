@@ -4,6 +4,9 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.Extended;
 using Sample.Audio;
 using Sample.Objects;
+using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Text;
 
 namespace Sample
 {
@@ -18,15 +21,22 @@ namespace Sample
         public Texture2D Texture;
         private AudioSource SoundFX;
 
-        int sizeX = 10;
-        int sizeY = 10;
+        private TcpListener server;
 
-        int offsetX = 0;
-        int offsetY = 0;
+        public int countBlocksX = 10;
+        public int countBlocksY = 10;
+        public int blockSize = 40;
 
-        int blockSize = 30;
+        int playfieldPxSizeX;
+        int playfieldPxSizeY;
 
-        int[,] playField;
+        PlayField playfieldLinks;
+        PlayField playfieldRechts;
+
+        public GameMode gameMode = GameMode.None;
+
+        List<Ship> ships;
+        public Ship currentDraggedShip = null;
 
         public SampleGame()
         {
@@ -59,16 +69,27 @@ namespace Sample
 
         #endregion
 
-        Player player;
-
-        private void Init()
+        private async void Init()
         {
-            playField = new int[sizeX, sizeY];
-            playField[0, 0] = 1;
-            playField[4, 6] = 1;
-            playField[4, 7] = 1;
-            offsetX = (GameBounds.Width - sizeX * blockSize) / 2;
-            offsetY = (GameBounds.Height - sizeY * blockSize) / 2;
+            playfieldPxSizeX = countBlocksX * blockSize;
+            playfieldPxSizeY = countBlocksY * blockSize;
+            ships = new List<Ship>();
+            ships.Add(new Ship(this, 500, 40, 3, Orientation.Vertical));
+
+            playfieldLinks = new PlayField(this, 50, (GameBounds.Height - playfieldPxSizeY) / 2);
+            playfieldLinks.Init(GameBounds);
+
+            playfieldRechts = new PlayField(this, GameBounds.Width - playfieldPxSizeX - 50, (GameBounds.Height - playfieldPxSizeY) / 2);
+            playfieldRechts.Init(GameBounds);
+
+            //offsetX = (GameBounds.Width - playfieldSizeX * blockSize) / 2;
+            //offsetY = (GameBounds.Height - playfieldSizeY * blockSize) / 2;
+
+            //server = new TcpListener(4000);
+            //server.Start();
+            //var client = await server.AcceptTcpClientAsync();
+            //var stream = client.GetStream();
+            //stream.Write(Encoding.ASCII.GetBytes("Hallo"));
         }
 
         protected override void Update(GameTime gameTime)
@@ -78,14 +99,21 @@ namespace Sample
 
             if (keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
-
-            if (mouseState.LeftButton == ButtonState.Pressed)
+            
+            foreach (var ship in ships)
             {
-                var x = (mouseState.X - offsetX) / blockSize;
-                var y = (mouseState.Y - offsetY) / blockSize;
-                if (x >= 0 && y >= 0 && x < sizeX && y < sizeY)
-                    playField[x, y] = 1;
+                ship.Update(gameTime, keyboardState, mouseState);
             }
+
+            playfieldLinks.Update(gameTime, keyboardState, mouseState);
+
+            //if (mouseState.LeftButton == ButtonState.Pressed)
+            //{
+            //    var x = (mouseState.X - offsetX) / blockSize;
+            //    var y = (mouseState.Y - offsetY) / blockSize;
+            //    if (x >= 0 && y >= 0 && x < playfieldSizeX && y < playfieldSizeY)
+            //        playField[x, y] = 1;
+            //}
 
             base.Update(gameTime);
         }
@@ -98,19 +126,10 @@ namespace Sample
             //in einer Liste (Batch), sonst würde es flackern
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-            for (int i = 0; i < sizeX; i++)
-            {
-                for (int j = 0; j < sizeY; j++)
-                {
-                    _spriteBatch.DrawRectangle(new Rectangle(i * blockSize + offsetX, j * blockSize + offsetY, blockSize, blockSize), Color.Black, 2);
-                    if (playField[i, j] == 1)
-                    {
-                        _spriteBatch.DrawCircle(new CircleF(new Vector2(i * blockSize + offsetX + blockSize/2, j * blockSize + offsetY+blockSize/2), blockSize / 2 - 2), 30, Color.Wheat, 20);
-                    }
-                }
-            }
-
-
+            playfieldLinks.Draw(gameTime, _spriteBatch);
+            playfieldRechts.Draw(gameTime, _spriteBatch);
+            foreach (var ship in ships)
+                ship.Draw(gameTime, _spriteBatch);
             //Das Bewirkt das die Batch abgearbeitet wird
             _spriteBatch.End();
             base.Draw(gameTime);
